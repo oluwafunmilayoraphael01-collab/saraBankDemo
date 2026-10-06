@@ -22,7 +22,10 @@ export const BalanceProvider = ({ children }) => {
     setUserName(name);
     localStorage.setItem("userName", name);
   };
-
+const clearBalance = () => {
+  setBalance(0);
+  localStorage.setItem("balance",0);
+};
   return (
     <BalanceContext.Provider
       value={{
@@ -30,6 +33,7 @@ export const BalanceProvider = ({ children }) => {
         addMoney,
         userName,
         saveUserName,
+        clearBalance,
       }}
     >
       {children}

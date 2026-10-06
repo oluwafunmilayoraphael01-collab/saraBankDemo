@@ -15,7 +15,7 @@ import { Link } from "react-router";
 import { useBalance } from "../context/BalanceContext";
 
 const Balance = () => {
-  const { balance, userName } = useBalance();
+  const { balance, userName, clearBalance } = useBalance();
 
   return (
     <div>
@@ -42,6 +42,7 @@ const Balance = () => {
             <h1 className="font-semibold text-2xl">
               ₦{balance.toLocaleString()}
             </h1>
+           <button onClick={clearBalance} className="border w-15 text-red-600 rounded-2xl">Clear</button> 
           </div>
           <div className="h-30md:px-20 px-4 bg-amber-50 rounded-2xl justify-between flex py-5">
 
