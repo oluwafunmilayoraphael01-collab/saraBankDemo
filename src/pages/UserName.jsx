@@ -31,7 +31,7 @@ const userName = () => {
         placeholder="Enter your name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border px-2 md:w-100  rounded mx-4"
+        className="border px-2 md:w-100  w-80 rounded mx-4"
       /> <br />
 
       <button type="submit" className=" mt-10 hover:text-amber-400 border rounded-2xl px-20 bg-green-600">
