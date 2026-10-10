@@ -19,9 +19,10 @@ const userName = () => {
   };
 
   return (
-    <div className="">
-      <div></div>
-      <div className="  bg-blue-800 text-amber-50 font-serif">
+    <div className=" bg-blue-700 h-199 md:h-159 text-3xl ">
+      <div className="text-center py-40 ">
+      <div className="py-10 text-2xl text-green-600 font-bold"><h1> <span className="text-amber-300 text-3xl font-bold">S</span>araMonie</h1></div>
+      <div className="   text-amber-50 font-serif">
       <form onSubmit={handleLogin}>
       <h1>Welcome to Saramonie</h1>
 
@@ -30,14 +31,14 @@ const userName = () => {
         placeholder="Enter your name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="border px-2  mx-4"
-      />
+        className="border px-2 md:w-100  rounded mx-4"
+      /> <br />
 
-      <button type="submit" className=" border rounded-2xl px-4 bg-green-600">
+      <button type="submit" className=" mt-10 hover:text-amber-400 border rounded-2xl px-20 bg-green-600">
         Continue
       </button>
     </form></div>
-    </div>
+    </div></div>
   )
 }
 

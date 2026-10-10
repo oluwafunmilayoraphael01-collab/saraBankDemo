@@ -29,7 +29,7 @@ const AddMoney = () => {
       </div>
 
       {/* Amount */}
-      <div className="mt-20">
+      <div className="mt-20 text-center">
         <p className="font-medium text-2xl">
           Enter Amount
         </p>
@@ -41,10 +41,10 @@ const AddMoney = () => {
           onChange={(e) => setAmount(e.target.value)}
           className="border rounded-lg w-full max-w-md h-12 px-3 mt-5"
         />
-
+<br />
         <button
           onClick={handleAddMoney}
-          className="bg-blue-700 text-white font-semibold rounded-lg px-6 py-3 mt-5"
+          className="bg-blue-700  text-white font-semibold rounded-lg px-6 py-3 mt-5"
         >
           Add Money
         </button>

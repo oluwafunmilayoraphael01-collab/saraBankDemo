@@ -36,15 +36,15 @@ const Balance = () => {
         </div>
 
         <div className="mt-5 rounded-2xl h-30 bg-blue-700">
-          <div className="py-5 px-5">
+          <div className="py-2 px-5">
             <p>Total Balance:</p>
 
             <h1 className="font-semibold text-2xl">
               ₦{balance.toLocaleString()}
             </h1>
-           <button onClick={clearBalance} className="border w-15 text-red-600 rounded-2xl">Clear</button> 
+           <button onClick={clearBalance} className="border hover:text-cyan-400 w-15 text-red-600 rounded-2xl">Clear</button> 
           </div>
-          <div className="h-30md:px-20 px-4 bg-amber-50 rounded-2xl justify-between flex py-5">
+          <div className="h-30 md:px-20 px-4 bg-amber-50 rounded-2xl justify-between flex py-5">
 
         <Link to="/addmoney">
           <div className="flex flex-col items-center">
@@ -95,7 +95,7 @@ const Balance = () => {
       
 
       {/* Quick Service */}
-      <h1 className="text-black mt-20 px-7 font-medium text-2xl md:text-3xl md:px-70">
+      <h1 className="text-black mt-20 px-7  font-medium text-2xl md:text-3xl md:px-70">
         Quick Service
       </h1>
       
