@@ -19,7 +19,7 @@ const userName = () => {
   };
 
   return (
-    <div className=" bg-blue-700 h-199 md:h-159 text-3xl ">
+    <div className=" bg-blue-700 h-156 md:h-159 text-3xl ">
       <div className="text-center py-40 ">
       <div className="py-10 text-2xl text-green-600 font-bold"><h1> <span className="text-amber-300 text-3xl font-bold">S</span>araMonie</h1></div>
       <div className="   text-amber-50 font-serif">

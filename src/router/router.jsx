@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router"
+import { createBrowserRouter,  } from "react-router"
 import UserName from "../pages/UserName";
 import Balance from "../pages/Balance";
 import AddMoney from "../pages/AddMoney";
@@ -6,17 +6,18 @@ import AddMoney from "../pages/AddMoney";
 const router =  createBrowserRouter (
 [
 {
-    index:true,
+
     path:"/",
-    Component:UserName,
+    Component:<UserName />,
 },
 {
     path:"/balance",
-    Component:Balance,
+    Component:
+    <Balance />,
 },
 {
 path:"/addmoney",
-Component:AddMoney,
+Component:<AddMoney/>,
 }
     ]
 )

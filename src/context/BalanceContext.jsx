@@ -3,6 +3,7 @@ import { createContext, useContext, useState } from "react";
 const BalanceContext = createContext(null);
 
 export const BalanceProvider = ({ children }) => {
+  
   const [balance, setBalance] = useState(() => {
     return Number(localStorage.getItem("balance")) || 0;
   });

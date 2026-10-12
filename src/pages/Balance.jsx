@@ -39,7 +39,7 @@ const Balance = () => {
           <div className="py-2 px-5">
             <p>Total Balance:</p>
 
-            <h1 className="font-semibold text-2xl">
+            <h1 className="font-semibold w-100 text-2xl">
               ₦{balance.toLocaleString()}
             </h1>
            <button onClick={clearBalance} className="border hover:text-cyan-400 w-15 text-red-600 rounded-2xl">Clear</button> 
@@ -83,7 +83,7 @@ const Balance = () => {
             <Ellipsis />
           </div>
 
-          <p className="py-3 text-black font-black">
+          <p className="py-3 p-2 w-10 text-black font-black">
             More
           </p>
         </div>

@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
 import { useBalance } from "../context/BalanceContext";
@@ -6,18 +6,20 @@ import { useBalance } from "../context/BalanceContext";
 const AddMoney = () => {
   const [amount, setAmount] = useState("");
   const { addMoney } = useBalance();
+  const [message, setMessage]= useState("");
 
   const handleAddMoney = () => {
     if (!amount || Number(amount) <= 0) return;
 
     addMoney(amount);
     setAmount("");
+    setMessage("Money Added Successfully")
   };
 
   return (
     <div className="min-h-screen px-5 py-5 bg-amber-50">
 
-      {/* Header */}
+      
       <div className="flex items-center gap-5">
         <Link to="/balance">
           <ArrowLeft />
@@ -28,7 +30,7 @@ const AddMoney = () => {
         </h1>
       </div>
 
-      {/* Amount */}
+      
       <div className="mt-20 text-center">
         <p className="font-medium text-2xl">
           Enter Amount
@@ -38,7 +40,9 @@ const AddMoney = () => {
           type="number"
           placeholder="Add Amount"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => {setAmount(e.target.value);
+            setMessage("");
+          }}
           className="border rounded-lg w-full max-w-md h-12 px-3 mt-5"
         />
 <br />
@@ -48,6 +52,11 @@ const AddMoney = () => {
         >
           Add Money
         </button>
+        {message && (
+        <div className="mt-5 flex items-center gap-2 rounded-xl bg-green-50 p-2 tex-sm text-green-700">
+          <CheckCircle2 size={20}/>
+          {message} </div>
+        )}
       </div>
 
     </div>
