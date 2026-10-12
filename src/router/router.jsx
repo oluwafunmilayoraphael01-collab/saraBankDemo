@@ -8,16 +8,16 @@ const router =  createBrowserRouter (
 {
 
     path:"/",
-    Component:<UserName />,
+    element:<UserName />,
 },
 {
     path:"/balance",
-    Component:
+    element:
     <Balance />,
 },
 {
 path:"/addmoney",
-Component:<AddMoney/>,
+element:<AddMoney/>,
 }
     ]
 )
