@@ -10,9 +10,10 @@ import {
   Lightbulb,
   Monitor
 } from "lucide-react";
-import Greetings from "./Greetings";
 import { Link } from "react-router";
 import { useBalance } from "../context/BalanceContext";
+import ProfileHeader from "./profileHeader";
+import Greetings from "./Greetings";
 
 const Balance = () => {
   const { balance, userName, clearBalance } = useBalance();
@@ -24,11 +25,17 @@ const Balance = () => {
         <div className="flex justify-between">
           
           <div className="flex gap-3">
-            <div className="border rounded-full bg-blue-600 h-10 w-10"></div>
+           
 
-            <div>
-              <h1>Hello, {userName}</h1>
-              <Greetings/>
+            <div className="flex ">
+              <div>
+              <ProfileHeader/>
+             </div>
+             <div> <div>
+          <p className="text-sm text-gray-500">Welcome back 👋</p>
+          <h2 className="text-lg font-bold capitalize">{userName}</h2>
+           <Greetings/>
+        </div></div>
             </div>
           </div>
 
@@ -95,7 +102,7 @@ const Balance = () => {
       
 
       {/* Quick Service */}
-      <h1 className="text-black mt-20 px-7  font-medium text-2xl md:text-3xl md:px-70">
+      <h1 className="text-black mt-30 px-7  font-medium text-2xl md:text-3xl md:px-70">
         Quick Service
       </h1>
       
