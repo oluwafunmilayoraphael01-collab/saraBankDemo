@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useContext,
@@ -33,33 +34,23 @@ export function BalanceProvider({ children }) {
       setLoading(true);
 
       try {
-        const [profileResult, balanceResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", user.id)
-            .maybeSingle(),
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("full_name, balance")
+          .eq("id", user.id)
+          .maybeSingle();
 
-          supabase
-            .from("balances")
-            .select("balance")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        ]);
-
-        if (profileResult.error) throw profileResult.error;
-        if (balanceResult.error) throw balanceResult.error;
-
+        if (error) throw error;
         if (!active) return;
 
         setUserName(
-          profileResult.data?.full_name ||
+          profile?.full_name ||
           user.user_metadata?.full_name ||
           user.email ||
           "User"
         );
 
-        setBalance(Number(balanceResult.data?.balance ?? 0));
+        setBalance(Number(profile?.balance ?? 0));
       } catch (error) {
         console.error("Failed to load account:", error.message);
       } finally {
@@ -77,32 +68,52 @@ export function BalanceProvider({ children }) {
   async function addMoney(amount) {
     const value = Number(amount);
 
-    if (!user) throw new Error("Please log in first.");
+    if (!user) {
+      throw new Error("Please log in first.");
+    }
 
     if (!Number.isFinite(value) || value <= 0) {
       throw new Error("Enter a valid amount.");
     }
 
-    // Read the current balance from Supabase.
-    const { data: account, error: readError } = await supabase
-      .from("balances")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single();
+    // Read the existing profile and balance.
+    const { data: profile, error: readError } = await supabase
+      .from("profiles")
+      .select("balance, full_name")
+      .eq("id", user.id)
+      .maybeSingle();
 
     if (readError) throw readError;
 
-    const newBalance = Number(account.balance) + value;
+    const currentBalance = Number(profile?.balance ?? 0);
+    const newBalance = currentBalance + value;
 
-    // Save the new balance to Supabase.
-    const { error: updateError } = await supabase
-      .from("balances")
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
-      .eq("user_id", user.id);
+    // Save the balance to the user's own profile.
+    const { data: savedProfile, error: saveError } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          full_name:
+            profile?.full_name ||
+            user.user_metadata?.full_name ||
+            user.email ||
+            "User",
+          balance: newBalance,
+        },
+        { onConflict: "id" }
+      )
+      .select("balance")
+      .single();
 
-    if (updateError) throw updateError;
+    if (saveError) throw saveError;
 
-    // Record the simulated deposit.
+    const savedBalance = Number(savedProfile.balance);
+
+    // Update the React display only after Supabase confirms the save.
+    setBalance(savedBalance);
+
+    // Record the simulated deposit if the transactions table exists.
     const { error: transactionError } = await supabase
       .from("transactions")
       .insert({
@@ -113,11 +124,13 @@ export function BalanceProvider({ children }) {
       });
 
     if (transactionError) {
-      console.error("Transaction record error:", transactionError.message);
+      console.error(
+        "Balance saved, but transaction history failed:",
+        transactionError.message
+      );
     }
 
-    setBalance(newBalance);
-    return newBalance;
+    return savedBalance;
   }
 
   function saveUserName(name) {
@@ -125,7 +138,7 @@ export function BalanceProvider({ children }) {
   }
 
   function clearBalance() {
-    // Local display only; does not reset the database balance.
+    // Display only. This does not change the database.
     setBalance(0);
   }
 

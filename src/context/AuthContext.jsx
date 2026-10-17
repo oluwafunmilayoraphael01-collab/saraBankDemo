@@ -59,8 +59,7 @@ async function register(email, password, fullName, phone) {
         full_name: fullName.trim(),
         phone: phone.trim(),
       },
-      emailRedirectTo: "https://sara-bank-demo.vercel.app/",
-    },
+emailRedirectTo: "https://saramonie.vercel.app/",    },
   });
 
   if (error) throw error;
