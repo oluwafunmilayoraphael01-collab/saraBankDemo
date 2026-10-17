@@ -1,9 +1,10 @@
 import { ArrowLeft, CheckCircle2, } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { useBalance } from "../context/BalanceContext";
 
 const AddMoney = () => {
+  const navigate = useNavigate()
   const [amount, setAmount] = useState("");
   const { addMoney } = useBalance();
   const [message, setMessage]= useState("");
@@ -14,6 +15,7 @@ const AddMoney = () => {
     addMoney(amount);
     setAmount("");
     setMessage("Money Added Successfully")
+    navigate("/balance")
   };
 
   return (
