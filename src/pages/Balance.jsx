@@ -10,7 +10,7 @@ import {
   Lightbulb,
   Monitor
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { useBalance } from "../context/BalanceContext";
 import ProfileHeader from "./profileHeader";
 import Greetings from "./Greetings";
