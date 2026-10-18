@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import {
   CircleX,
   Smartphone,
@@ -10,196 +12,227 @@ import {
   Lightbulb,
   Monitor,
   LogOut,
+  LoaderCircle,
 } from "lucide-react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { useBalance } from "../context/BalanceContext";
-import ProfileHeader from "./profileHeader";
-import Greetings from "./Greetings";
 import { useAuth } from "../context/Authcontext";
 import { supabase } from "../lib/supabase";
 
+import TransactionHistory from "./TransactionHistory";
+import ProfileHeader from "./profileHeader";
+import Greetings from "./Greetings";
+
+const formatMoney = (amount) =>
+  Number(amount || 0).toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 const Balance = () => {
-  const { balance, clearBalance } = useBalance();
+  const { balance, loadingBalance } = useBalance();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const fullName = user?.user_metadata?.full_name || "User";
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  const fullName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "User";
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
+    if (loggingOut) return;
 
-    if (error) {
-      console.error("Logout failed:", error.message);
-      return;
+    setLoggingOut(true);
+    setLogoutError("");
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) throw error;
+
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setLogoutError(error.message || "Unable to log out. Try again.");
+    } finally {
+      setLoggingOut(false);
     }
-
-    navigate("/login", { replace: true });
   };
 
+  const services = [
+    { name: "Airtime", icon: Smartphone },
+    { name: "Data", icon: GlobeCheck },
+    { name: "Electricity", icon: Lightbulb },
+    { name: "Cable TV", icon: Monitor },
+    { name: "Betting", icon: CircleX },
+    { name: "More", icon: Ellipsis },
+  ];
+
   return (
-    <div>
-      {/* Header */}
-      <div className="border rounded-b-4xl h-60 px-5 py-5 bg-blue-950 text-amber-50">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-3">
-            <div className="flex">
-              <div>
-                <ProfileHeader />
-              </div>
+    <main className="min-h-screen bg-gray-50 pb-8">
+      {/* Header and balance */}
+      <section className="rounded-b-[2rem] bg-blue-950 px-4 pb-8 pt-5 text-amber-50 sm:px-6">
+        {/* Profile and logout */}
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <ProfileHeader />
 
-              <div>
-                <p className="text-sm text-gray-300">
-                  Welcome back 👋
-                </p>
+            <div className="min-w-0">
+              <p className="text-sm text-gray-300">Welcome back 👋</p>
 
-                <h2 className="text-lg font-bold capitalize">
-                  {fullName}
-                </h2>
+              <h2 className="truncate text-lg font-bold capitalize sm:text-xl">
+                {fullName}
+              </h2>
 
-                <Greetings />
-              </div>
+              <Greetings />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Bell />
+          <div className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="rounded-full p-2 transition hover:bg-blue-900"
+            >
+              <Bell size={21} />
+            </button>
 
             <button
+              type="button"
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700"
+              disabled={loggingOut}
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <LogOut size={18} />
-              <span>Logout</span>
+              {loggingOut ? (
+                <LoaderCircle size={18} className="animate-spin" />
+              ) : (
+                <LogOut size={18} />
+              )}
+
+              <span className="hidden sm:inline">
+                {loggingOut ? "Logging out..." : "Logout"}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Total Balance */}
-        <div className="mt-5 rounded-2xl h-30 bg-blue-700">
-          <div className="py-2 px-5">
-            <p>Total Balance:</p>
+        {logoutError && (
+          <p role="alert" className="mx-auto mt-3 max-w-6xl text-sm text-red-300">
+            {logoutError}
+          </p>
+        )}
 
-            <h1 className="font-semibold text-2xl">
-              ₦{balance.toLocaleString()}
-            </h1>
+        {/* Balance card */}
+        <div className="mx-auto mt-6 max-w-6xl rounded-2xl bg-blue-700 p-5 shadow-lg sm:p-6">
+          <p className="text-sm text-blue-100">Total Balance</p>
 
-            <button
-              onClick={clearBalance}
-              className="border hover:text-cyan-400 w-15 text-red-600 rounded-2xl"
+          <h1 className="mt-2 break-words text-3xl font-bold sm:text-4xl">
+            {loadingBalance ? (
+              <span className="inline-flex items-center gap-2 text-xl">
+                <LoaderCircle size={22} className="animate-spin" />
+                Loading balance...
+              </span>
+            ) : (
+              `₦${formatMoney(balance)}`
+            )}
+          </h1>
+
+          <p className="mt-2 text-xs text-blue-100">
+            Your available demo account balance
+          </p>
+        </div>
+
+        {/* Quick actions */}
+        <div className="mx-auto mt-5 grid max-w-6xl grid-cols-4 gap-2 rounded-2xl bg-amber-50 px-2 py-5 text-gray-900 sm:gap-4 sm:px-5">
+          <Link
+            to="/addmoney"
+            className="flex min-w-0 flex-col items-center rounded-xl p-2 transition hover:bg-blue-50"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
+              <Plus size={23} />
+            </span>
+            <span className="mt-2 text-center text-xs font-bold sm:text-sm">
+              Add Money
+            </span>
+          </Link>
+
+          <Link
+            to="/withdraw"
+            className="flex min-w-0 flex-col items-center rounded-xl p-2 transition hover:bg-blue-50"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
+              <Send size={21} />
+            </span>
+            <span className="mt-2 text-center text-xs font-bold sm:text-sm">
+              Withdraw
+            </span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => navigate("/transfer")}
+            className="flex min-w-0 flex-col items-center rounded-xl p-2 transition hover:bg-blue-50"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
+              <ArrowRightLeft size={22} />
+            </span>
+            <span className="mt-2 text-center text-xs font-bold sm:text-sm">
+              Transfer
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/NotAvaliable")}
+            className="flex min-w-0 flex-col items-center rounded-xl p-2 transition hover:bg-blue-50"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
+              <Ellipsis size={23} />
+            </span>
+            <span className="mt-2 text-center text-xs font-bold sm:text-sm">
+              More
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* Quick services */}
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          Quick Services
+        </h2>
+
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {services.map(({ name, icon: Icon }) => (
+            <Link
+              key={name}
+              to="/NotAvaliable"
+              className="flex min-h-32 flex-col items-start justify-center rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-md"
             >
-              Clear
-            </button>
-          </div>
+              <span className="text-blue-600">
+                <Icon size={34} />
+              </span>
 
-          {/* Actions */}
-          <div className="h-30 md:px-20 px-4 bg-amber-50 rounded-2xl justify-between flex py-5">
-            <Link to="/addmoney">
-              <div className="flex flex-col items-center">
-                <div className="rounded-full bg-blue-600 h-10 w-10 p-2">
-                  <Plus />
-                </div>
+              <span className="mt-3 font-bold text-gray-900">{name}</span>
 
-                <p className="py-3 text-black font-black">
-                  Add Money
-                </p>
-              </div>
+              <span className="mt-1 text-xs text-gray-500">
+                Explore service
+              </span>
             </Link>
-
-            <div className="flex flex-col items-center">
-              <div className="rounded-full bg-blue-600 h-10 w-10 p-2">
-                <Send />
-              </div>
-
-              <p className="py-3 text-black font-black">
-                Send Money
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="rounded-full bg-blue-600 h-10 w-10 p-2">
-                <ArrowRightLeft />
-              </div>
-
-              <p className="py-3 text-black font-black">
-                Transfer
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="rounded-full bg-blue-600 h-10 w-10 p-2">
-                <Ellipsis />
-              </div>
-
-              <p className="py-3 text-black font-black">
-                More
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Quick Service */}
-      <h1 className="text-black mt-30 px-7 font-medium text-2xl md:text-3xl md:px-70">
-        Quick Service
-      </h1>
-
-      <div className="grid grid-cols-3 gap-4 md:grid-cols-3 sm:px-20 px-2 py-4 md:px-70">
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <Smartphone size={40} />
-            </div>
-            <h2 className="font-bold">Airtime</h2>
-          </div>
-        </Link>
-
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <GlobeCheck size={40} />
-            </div>
-            <h2 className="font-bold">Data</h2>
-          </div>
-        </Link>
-
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <Lightbulb size={40} />
-            </div>
-            <h2 className="font-bold">Electricity</h2>
-          </div>
-        </Link>
-
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <Monitor size={40} />
-            </div>
-            <h2 className="font-bold">Cable TV</h2>
-          </div>
-        </Link>
-
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <CircleX size={40} />
-            </div>
-            <h2 className="font-bold px-2">Bet</h2>
-          </div>
-        </Link>
-
-        <Link to="/NotAvaliable">
-          <div className="border h-30 w-30 px-8 py-5 rounded-2xl">
-            <div className="text-blue-600">
-              <Ellipsis size={40} />
-            </div>
-            <h2 className="font-bold">More</h2>
-          </div>
-        </Link>
-      </div>
-    </div>
+      {/* Transaction history */}
+      <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+        <TransactionHistory />
+      </section>
+    </main>
   );
 };
 

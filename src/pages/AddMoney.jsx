@@ -1,91 +1,91 @@
 
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useBalance } from "../context/BalanceContext";
 
-const AddMoney = () => {
-  const navigate = useNavigate();
-  const [amount, setAmount] = useState("");
-  const { addMoney } = useBalance();
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function AddMoney() {
+  const { addMoney, balance, loadingBalance } = useBalance();
 
-  const handleAddMoney = async () => {
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setMessage("");
+
     const value = Number(amount);
 
-    if (!amount || !Number.isFinite(value) || value <= 0) {
-      setError("Enter a valid amount.");
+    if (!Number.isFinite(value) || value <= 0) {
+      setMessage("Enter a valid amount.");
       return;
     }
 
+    setBusy(true);
+
     try {
-      setLoading(true);
-      setError("");
-      setMessage("");
-
-      await addMoney(value);
-
+      await addMoney(value, "Demo deposit");
       setAmount("");
-      setMessage("Money Added Successfully");
-      navigate("/balance");
-    } catch (err) {
-      setError(err.message || "Failed to add money. Try again.");
+      setMessage("Deposit recorded successfully.");
+    } catch (error) {
+      setMessage(error.message || "Deposit failed.");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen px-5 py-5 bg-amber-50">
-      <div className="flex items-center gap-5">
-        <Link to="/balance">
-          <ArrowLeft />
-        </Link>
-        <h1 className="font-bold text-xl">Add Money</h1>
-      </div>
+    <main className="mx-auto max-w-lg p-6">
+      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-bold">Add Money</h1>
 
-      <div className="mt-20 text-center">
-        <p className="font-medium text-2xl">Enter Amount</p>
+        <p className="mt-2 text-gray-500">
+          Current balance
+        </p>
 
-        <input
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="Add Amount"
-          value={amount}
-          onChange={(e) => {
-            setAmount(e.target.value);
-            setMessage("");
-            setError("");
-          }}
-          className="border rounded-lg w-full max-w-md h-12 px-3 mt-5"
-        />
+        <p className="mb-6 text-3xl font-bold text-blue-600">
+          {loadingBalance
+            ? "Loading..."
+            : `₦${balance.toLocaleString("en-NG", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+        </p>
 
-        <br />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label
+            htmlFor="amount"
+            className="block font-medium"
+          >
+            Amount (₦)
+          </label>
 
-        <button
-          onClick={handleAddMoney}
-          disabled={loading}
-          className="bg-blue-700 text-white font-semibold rounded-lg px-6 py-3 mt-5 disabled:opacity-50"
-        >
-          {loading ? "Adding..." : "Add Money"}
-        </button>
+          <input
+            id="amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            placeholder="Enter amount"
+            required
+            className="w-full rounded-lg border p-3 outline-none focus:border-blue-500"
+          />
+
+          <button
+            type="submit"
+            disabled={busy || loadingBalance}
+            className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "Processing..." : "Add Money"}
+          </button>
+        </form>
 
         {message && (
-          <div className="mt-5 flex items-center gap-2 rounded-xl bg-green-50 p-2 text-sm text-green-700">
-            <CheckCircle2 size={20} />
+          <p role="status" className="mt-4 text-sm">
             {message}
-          </div>
-        )}
-
-        {error && (
-          <p className="mt-4 text-sm text-red-600">{error}</p>
+          </p>
         )}
       </div>
-    </div>
+    </main>
   );
-};
-
-export default AddMoney;
+}

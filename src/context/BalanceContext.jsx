@@ -1,156 +1,175 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
 
 import { supabase } from "../lib/supabase";
-import { useAuth } from "./Authcontext";
 
 const BalanceContext = createContext(null);
 
-export function BalanceProvider({ children }) {
-  const { user, loading: authLoading } = useAuth();
+function formatTransaction(row) {
+  return {
+    id: row.id,
+    amount: Number(row.amount),
+    type:
+      row.transaction_type === "deposit"
+        ? "credit"
+        : "debit",
+    transaction_type: row.transaction_type,
+    description: row.description ?? "",
+    date: row.created_at,
+    created_at: row.created_at,
+  };
+}
 
+export function BalanceProvider({ children }) {
   const [balance, setBalance] = useState(0);
-  const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingBalance, setLoadingBalance] = useState(true);
+  const [transactionError, setTransactionError] = useState("");
+
+  const refreshData = useCallback(async () => {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+
+    if (!user) {
+      setBalance(0);
+      setTransactions([]);
+      return;
+    }
+
+    const [profileResult, transactionResult] =
+      await Promise.all([
+        supabase
+          .from("profiles")
+          .select("balance")
+          .eq("id", user.id)
+          .single(),
+
+        supabase
+          .from("transactions")
+          .select(
+            "id, amount, transaction_type, description, created_at"
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+    if (profileResult.error) throw profileResult.error;
+    if (transactionResult.error) throw transactionResult.error;
+
+    setBalance(Number(profileResult.data.balance ?? 0));
+    setTransactions(
+      transactionResult.data.map(formatTransaction)
+    );
+  }, []);
 
   useEffect(() => {
     let active = true;
 
-    async function loadUserData() {
-      if (authLoading) return;
-
-      if (!user) {
-        setBalance(0);
-        setUserName("");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
+    async function load() {
+      setLoadingBalance(true);
 
       try {
-        const { data: profile, error } = await supabase
-          .from("profiles")
-          .select("full_name, balance")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!active) return;
-
-        setUserName(
-          profile?.full_name ||
-          user.user_metadata?.full_name ||
-          user.email ||
-          "User"
-        );
-
-        setBalance(Number(profile?.balance ?? 0));
+        await refreshData();
       } catch (error) {
-        console.error("Failed to load account:", error.message);
+        console.error("Failed to load account data:", error);
+
+        if (active) {
+          setTransactionError(
+            error.message || "Could not load account data."
+          );
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) setLoadingBalance(false);
       }
     }
 
-    loadUserData();
+    load();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      // Defer the database fetch until the auth callback finishes.
+      setTimeout(() => {
+        if (active) {
+          load();
+        }
+      }, 0);
+    });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
-  }, [user, authLoading]);
+  }, [refreshData]);
 
-  async function addMoney(amount) {
-    const value = Number(amount);
+  const processTransaction = useCallback(
+    async (amount, type, description = "") => {
+      const value = Number(amount);
 
-    if (!user) {
-      throw new Error("Please log in first.");
-    }
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error("Enter a valid amount greater than zero.");
+      }
 
-    if (!Number.isFinite(value) || value <= 0) {
-      throw new Error("Enter a valid amount.");
-    }
+      if (Math.round(value * 100) !== value * 100) {
+        throw new Error("Amount can have at most two decimal places.");
+      }
 
-    // Read the existing profile and balance.
-    const { data: profile, error: readError } = await supabase
-      .from("profiles")
-      .select("balance, full_name")
-      .eq("id", user.id)
-      .maybeSingle();
+      setTransactionError("");
 
-    if (readError) throw readError;
-
-    const currentBalance = Number(profile?.balance ?? 0);
-    const newBalance = currentBalance + value;
-
-    // Save the balance to the user's own profile.
-    const { data: savedProfile, error: saveError } = await supabase
-      .from("profiles")
-      .upsert(
+      const { data, error } = await supabase.rpc(
+        "process_transaction",
         {
-          id: user.id,
-          full_name:
-            profile?.full_name ||
-            user.user_metadata?.full_name ||
-            user.email ||
-            "User",
-          balance: newBalance,
-        },
-        { onConflict: "id" }
-      )
-      .select("balance")
-      .single();
-
-    if (saveError) throw saveError;
-
-    const savedBalance = Number(savedProfile.balance);
-
-    // Update the React display only after Supabase confirms the save.
-    setBalance(savedBalance);
-
-    // Record the simulated deposit if the transactions table exists.
-    const { error: transactionError } = await supabase
-      .from("transactions")
-      .insert({
-        user_id: user.id,
-        transaction_type: "deposit",
-        amount: value,
-        status: "completed",
-      });
-
-    if (transactionError) {
-      console.error(
-        "Balance saved, but transaction history failed:",
-        transactionError.message
+          p_amount: value,
+          p_type: type,
+          p_description: description,
+        }
       );
-    }
 
-    return savedBalance;
-  }
+      if (error) {
+        setTransactionError(error.message);
+        throw error;
+      }
 
-  function saveUserName(name) {
-    setUserName(name);
-  }
+      // Reload the authoritative database state.
+      await refreshData();
 
-  function clearBalance() {
-    // Display only. This does not change the database.
-    setBalance(0);
-  }
+      return data;
+    },
+    [refreshData]
+  );
+
+  const addMoney = useCallback(
+    (amount, description = "Demo deposit") =>
+      processTransaction(amount, "deposit", description),
+    [processTransaction]
+  );
+
+  const deductMoney = useCallback(
+    (amount, description = "Demo withdrawal") =>
+      processTransaction(amount, "withdrawal", description),
+    [processTransaction]
+  );
 
   return (
     <BalanceContext.Provider
       value={{
         balance,
-        userName,
-        loading: authLoading || loading,
+        transactions,
+        loadingBalance,
+        transactionError,
         addMoney,
-        saveUserName,
-        clearBalance,
+        deductMoney,
+        refreshData,
       }}
     >
       {children}
@@ -159,5 +178,13 @@ export function BalanceProvider({ children }) {
 }
 
 export function useBalance() {
-  return useContext(BalanceContext);
+  const context = useContext(BalanceContext);
+
+  if (!context) {
+    throw new Error(
+      "useBalance must be used inside BalanceProvider."
+    );
+  }
+
+  return context;
 }

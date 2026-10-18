@@ -3,8 +3,7 @@ import "./index.css";
 import { router } from "./router/router";
 import { RouterProvider } from "react-router-dom";
 import { BalanceProvider } from "./context/BalanceContext";
-import { AuthProvider } from "../context/AuthContext.jsx";
-
+import { AuthProvider } from "./context/Authcontext";
 createRoot(document.getElementById("root")).render(
   <AuthProvider>
     <BalanceProvider>

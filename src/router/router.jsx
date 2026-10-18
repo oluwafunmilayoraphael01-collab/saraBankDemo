@@ -5,6 +5,7 @@ import Balance from "../pages/Balance";
 import AddMoney from "../pages/AddMoney";
 import ProtectedRoute from "../context/ProtectedRoute";
 import PublicRoute from "../context/PublicRoute";
+import Withdraw from "../pages/Withdraw";
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ export const router = createBrowserRouter([
         path: "/addmoney",
         element: <AddMoney/>,
       },
+      {
+        path: "/withdraw",
+        element: <Withdraw/>
+      }
     ],
   },
 ]);
